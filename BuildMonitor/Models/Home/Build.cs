@@ -11,7 +11,11 @@ namespace BuildMonitor.Models.Home
 		public string LastRunText { get; set; }
 		public bool IsQueued { get; set; }
 		public string StatusDescription { get; set; }
-
+        public string TestPassed { get; set; }
+        public string TotalTest { get; set; }
+        public string CodeCoverageClasses { get; set; }
+        public string CodeCoverageMethods { get; set; }
+        public string CodeCoverageStatements { get; set; }
 
 		public string StatusText
 		{

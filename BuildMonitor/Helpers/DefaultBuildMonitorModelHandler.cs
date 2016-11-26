@@ -11,18 +11,21 @@ namespace BuildMonitor.Helpers
 
 			GetTeamCityBuildsJson();
 
-			var count = (int)projectsJson.count;
-			for (int i = 0; i < count; i++)
-			{
-				var project = new Project();
-				var projectJson = projectsJson.project[i];
+            if (projectsJson != null)
+            {
+                var count = (int)projectsJson.count;
+                for (int i = 0; i < count; i++)
+                {
+                    var project = new Project();
+                    var projectJson = projectsJson.project[i];
 
-				project.Id = projectJson.id;
-				project.Name = projectJson.name;
-				AddBuilds(ref project);
+                    project.Id = projectJson.id;
+                    project.Name = projectJson.name;
+                    AddBuilds(ref project);
 
-				model.Projects.Add(project);
-			}
+                    model.Projects.Add(project);
+                }
+            }
 
 			return model;
 		}
@@ -58,7 +61,11 @@ namespace BuildMonitor.Helpers
 				build.UpdatedBy = GetUpdatedBy();
 				build.LastRunText = GetLastRunText();
 				build.IsQueued = IsBuildQueued(build.Id);
-				build.StatusDescription = (string)buildStatusJson.statusText;
+
+                if (buildStatusJson != null)
+                {
+                    build.StatusDescription = (string)buildStatusJson.statusText;
+                }
 
 				if (build.Status == BuildStatus.Running)
 				{

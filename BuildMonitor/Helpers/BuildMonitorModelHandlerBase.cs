@@ -7,189 +7,215 @@ using Newtonsoft.Json;
 
 namespace BuildMonitor.Helpers
 {
-	public abstract class BuildMonitorModelHandlerBase : IBuildMonitorModelHandler
-	{
-		protected readonly string teamCityUrl;
-		protected readonly string projectsUrl;
-		protected readonly string buildTypesUrl;
-		protected readonly string runningBuildsUrl;
-		protected readonly string buildStatusUrl;
-		protected readonly string buildQueueUrl;
-		protected Dictionary<string, dynamic> runningBuilds;
+    public abstract class BuildMonitorModelHandlerBase : IBuildMonitorModelHandler
+    {
+        protected readonly string teamCityUrl;
+        protected readonly string projectsUrl;
+        protected readonly string buildTypesUrl;
+        protected readonly string runningBuildsUrl;
+        protected readonly string buildStatusUrl;
+        protected readonly string buildQueueUrl;
+        protected readonly string statisticsUrl;
+        protected Dictionary<string, dynamic> runningBuilds;
 
-		protected dynamic projectsJson;
-		protected dynamic buildTypesJson;
-		protected dynamic buildQueueJson;
-		protected dynamic buildStatusJson;
+        protected dynamic projectsJson;
+        protected dynamic buildTypesJson;
+        protected dynamic buildQueueJson;
+        protected dynamic buildStatusJson;
+        protected dynamic buildStatisticJson;
 
-		protected BuildMonitorModelHandlerBase()
-		{
-			teamCityUrl = ConfigurationManager.AppSettings["teamcity_api_url"];
-			projectsUrl = teamCityUrl + ConfigurationManager.AppSettings["teamcity_api_projects"];
-			buildTypesUrl = teamCityUrl + ConfigurationManager.AppSettings["teamcity_api_buildtypes"];
-			runningBuildsUrl = teamCityUrl + ConfigurationManager.AppSettings["teamcity_api_runningbuilds"];
-			buildStatusUrl = teamCityUrl + ConfigurationManager.AppSettings["teamcity_api_buildstatus"];
-			buildQueueUrl = teamCityUrl + ConfigurationManager.AppSettings["teamcity_api_buildqueue"];
-		}
+        protected BuildMonitorModelHandlerBase()
+        {
+            teamCityUrl = ConfigurationManager.AppSettings["teamcity_api_url"];
+            projectsUrl = teamCityUrl + ConfigurationManager.AppSettings["teamcity_api_projects"];
+            buildTypesUrl = teamCityUrl + ConfigurationManager.AppSettings["teamcity_api_buildtypes"];
+            runningBuildsUrl = teamCityUrl + ConfigurationManager.AppSettings["teamcity_api_runningbuilds"];
+            buildStatusUrl = teamCityUrl + ConfigurationManager.AppSettings["teamcity_api_buildstatus"];
+            buildQueueUrl = teamCityUrl + ConfigurationManager.AppSettings["teamcity_api_buildqueue"];
+            statisticsUrl = teamCityUrl + ConfigurationManager.AppSettings["teamcity_api_statistics"];
+        }
 
-		protected void GetTeamCityBuildsJson()
-		{
-			var projectsJsonString = RequestHelper.GetJson(projectsUrl);
-			projectsJson = JsonConvert.DeserializeObject<dynamic>(projectsJsonString);
+        protected void GetTeamCityBuildsJson()
+        {
+            var projectsJsonString = RequestHelper.GetJson(projectsUrl);
 
-			var buildTypesJsonString = RequestHelper.GetJson(buildTypesUrl);
-			buildTypesJson = JsonConvert.DeserializeObject<dynamic>(buildTypesJsonString);
+            if (projectsJsonString != null)
+            {
+                projectsJson = JsonConvert.DeserializeObject<dynamic>(projectsJsonString);
+            }
 
-			var buildQueueJsonString = RequestHelper.GetJson(buildQueueUrl);
-			buildQueueJson = buildQueueJsonString != null ? JsonConvert.DeserializeObject<dynamic>(buildQueueJsonString) : null;
+            var buildTypesJsonString = RequestHelper.GetJson(buildTypesUrl);
 
-			UpdateRunningBuilds();
-		}
+            if (buildTypesJsonString != null)
+            {
+                buildTypesJson = JsonConvert.DeserializeObject<dynamic>(buildTypesJsonString);
+            }
 
-		private void UpdateRunningBuilds()
-		{
-			try
-			{
-				runningBuilds = new Dictionary<string, dynamic>();
+            var buildQueueJsonString = RequestHelper.GetJson(buildQueueUrl);
 
-				var runningBuildsJsonString = RequestHelper.GetJson(runningBuildsUrl);
-				var runningBuildsJson = runningBuildsJsonString != null ? JsonConvert.DeserializeObject<dynamic>(runningBuildsJsonString) : null;
+            if (buildQueueJsonString != null)
+            {
+                buildQueueJson = buildQueueJsonString != null ? JsonConvert.DeserializeObject<dynamic>(buildQueueJsonString) : null;
+            }
 
-				var count = (int)runningBuildsJson.count;
-				for (int i = 0; i < count; i++)
-				{
-					var buildJson = runningBuildsJson.build[i];
+            UpdateRunningBuilds();
+        }
 
-					var buildId = (string)buildJson.buildTypeId;
-					var url = teamCityUrl + (string)buildJson.href;
+        private void UpdateRunningBuilds()
+        {
+            try
+            {
+                runningBuilds = new Dictionary<string, dynamic>();
 
-					var buildStatusJsonString = RequestHelper.GetJson(url);
-					var buildStatusJson = JsonConvert.DeserializeObject<dynamic>(buildStatusJsonString ?? string.Empty);
+                var runningBuildsJsonString = RequestHelper.GetJson(runningBuildsUrl);
+                var runningBuildsJson = runningBuildsJsonString != null ? JsonConvert.DeserializeObject<dynamic>(runningBuildsJsonString) : null;
 
-					runningBuilds.Add(buildId, buildStatusJson);
-				}
-			}
-			catch
-			{
-			}
-		}
+                if (runningBuildsJson != null)
+                {
+                    var count = (int)runningBuildsJson.count;
+                    for (int i = 0; i < count; i++)
+                    {
+                        var buildJson = runningBuildsJson.build[i];
 
-		protected void UpdateBuildStatusFromRunningBuildJson(string buildId)
-		{
-			buildStatusJson = runningBuilds[buildId];
-		}
+                        var buildId = (string)buildJson.buildTypeId;
+                        var url = teamCityUrl + (string)buildJson.href;
 
-		protected BuildStatus GetBuildStatusForRunningBuild(string buildId)
-		{
-			if (runningBuilds.ContainsKey(buildId))
-			{
-				return BuildStatus.Running;
-			}
+                        var buildStatusJsonString = RequestHelper.GetJson(url);
+                        var buildStatusJson = JsonConvert.DeserializeObject<dynamic>(buildStatusJsonString ?? string.Empty);
 
-			if (buildStatusJson == null)
-			{
-				return BuildStatus.None;
-			}
+                        runningBuilds.Add(buildId, buildStatusJson);
+                    }
+                }
+            }
+            catch
+            {
+            }
+        }
 
-			switch ((string)buildStatusJson.status)
-			{
-				case "SUCCESS":
-					return BuildStatus.Success;
+        protected void UpdateBuildStatusFromRunningBuildJson(string buildId)
+        {
+            buildStatusJson = runningBuilds[buildId];
+        }
 
-				case "FAILURE":
-					return BuildStatus.Failure;
+        protected BuildStatus GetBuildStatusForRunningBuild(string buildId)
+        {
+            if (runningBuilds.ContainsKey(buildId))
+            {
+                return BuildStatus.Running;
+            }
 
-				case "ERROR":
-					return BuildStatus.Error;
+            if (buildStatusJson == null)
+            {
+                return BuildStatus.None;
+            }
 
-				default:
-					return BuildStatus.None;
-			}
-		}
+            switch ((string)buildStatusJson.status)
+            {
+                case "SUCCESS":
+                    return BuildStatus.Success;
 
-		protected string[] GetRunningBuildBranchAndProgress(string buildId)
-		{
-			var result = new[]
+                case "FAILURE":
+                    {
+                        this.PlaySound(buildId);
+                        return BuildStatus.Failure;
+                    }
+
+                case "ERROR":
+                    return BuildStatus.Error;
+
+                default:
+                    return BuildStatus.None;
+            }
+        }
+
+        private void PlaySound(string buildId)
+        {
+            //throw new NotImplementedException();
+        }
+
+        protected string[] GetRunningBuildBranchAndProgress(string buildId)
+        {
+            var result = new[]
             {
                 string.Empty,
                 string.Empty
             };
 
-			try
-			{
-				result[0] = (string)runningBuilds[buildId].branchName ?? "default";
+            try
+            {
+                result[0] = (string)runningBuilds[buildId].branchName ?? "default";
 
-				var percentage = (string)runningBuilds[buildId].percentageComplete;
-				result[1] = !string.IsNullOrWhiteSpace(percentage) ? percentage + "%" : "0%";
-			}
-			catch
-			{
-			}
+                var percentage = (string)runningBuilds[buildId].percentageComplete;
+                result[1] = !string.IsNullOrWhiteSpace(percentage) ? percentage + "%" : "0%";
+            }
+            catch
+            {
+            }
 
-			return result;
-		}
+            return result;
+        }
 
-		public abstract BuildMonitorViewModel GetModel();
+        public abstract BuildMonitorViewModel GetModel();
 
-		protected string GetLastRunText()
-		{
-			const int second = 1;
-			const int minute = 60 * second;
-			const int hour = 60 * minute;
-			const int day = 24 * hour;
-			const int month = 30 * day;
+        protected string GetLastRunText()
+        {
+            const int second = 1;
+            const int minute = 60 * second;
+            const int hour = 60 * minute;
+            const int day = 24 * hour;
+            const int month = 30 * day;
 
-			try
-			{
-				var dateTime = DateTime.ParseExact((string)buildStatusJson.startDate, "yyyyMMdd'T'HHmmsszzz", CultureInfo.InvariantCulture);
+            try
+            {
+                var dateTime = DateTime.ParseExact((string)buildStatusJson.startDate, "yyyyMMdd'T'HHmmsszzz", CultureInfo.InvariantCulture);
 
-				var timeSpan = new TimeSpan(DateTime.Now.Ticks - dateTime.Ticks);
-				double delta = Math.Abs(timeSpan.TotalSeconds);
+                var timeSpan = new TimeSpan(DateTime.Now.Ticks - dateTime.Ticks);
+                double delta = Math.Abs(timeSpan.TotalSeconds);
 
-				if (delta < 1 * minute)
-				{
-					return timeSpan.Seconds == 1 ? "one second ago" : timeSpan.Seconds + " seconds ago";
-				}
-				if (delta < 2 * minute)
-				{
-					return "a minute ago";
-				}
-				if (delta < 45 * minute)
-				{
-					return timeSpan.Minutes + " minutes ago";
-				}
-				if (delta < 90 * minute)
-				{
-					return "an hour ago";
-				}
-				if (delta < 24 * hour)
-				{
-					return timeSpan.Hours + " hours ago";
-				}
-				if (delta < 48 * hour)
-				{
-					return "yesterday";
-				}
-				if (delta < 30 * day)
-				{
-					return timeSpan.Days + " days ago";
-				}
+                if (delta < 1 * minute)
+                {
+                    return timeSpan.Seconds == 1 ? "one second ago" : timeSpan.Seconds + " seconds ago";
+                }
+                if (delta < 2 * minute)
+                {
+                    return "a minute ago";
+                }
+                if (delta < 45 * minute)
+                {
+                    return timeSpan.Minutes + " minutes ago";
+                }
+                if (delta < 90 * minute)
+                {
+                    return "an hour ago";
+                }
+                if (delta < 24 * hour)
+                {
+                    return timeSpan.Hours + " hours ago";
+                }
+                if (delta < 48 * hour)
+                {
+                    return "yesterday";
+                }
+                if (delta < 30 * day)
+                {
+                    return timeSpan.Days + " days ago";
+                }
 
-				if (delta < 12 * month)
-				{
-					int months = Convert.ToInt32(Math.Floor((double)timeSpan.Days / 30));
-					return months <= 1 ? "one month ago" : months + " months ago";
-				}
-				else
-				{
-					int years = Convert.ToInt32(Math.Floor((double)timeSpan.Days / 365));
-					return years <= 1 ? "one year ago" : years + " years ago";
-				}
-			}
-			catch
-			{
-				return string.Empty;
-			}
-		}
-	}
+                if (delta < 12 * month)
+                {
+                    int months = Convert.ToInt32(Math.Floor((double)timeSpan.Days / 30));
+                    return months <= 1 ? "one month ago" : months + " months ago";
+                }
+                else
+                {
+                    int years = Convert.ToInt32(Math.Floor((double)timeSpan.Days / 365));
+                    return years <= 1 ? "one year ago" : years + " years ago";
+                }
+            }
+            catch
+            {
+                return string.Empty;
+            }
+        }
+    }
 }

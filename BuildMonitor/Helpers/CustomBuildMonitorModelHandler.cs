@@ -56,56 +56,87 @@ namespace BuildMonitor.Helpers
 			{
 				var buildTypeJson = GetJsonBuildTypeById(job.Id);
 
-				var build = new Build();
-				build.Id = buildTypeJson.id;
-				build.Name = job.Text ?? buildTypeJson.name;
+                if (buildTypeJson != null)
+                {
+                    var build = new Build();
+                    build.Id = buildTypeJson.id;
+                    build.Name = job.Text ?? buildTypeJson.name;
 
-				var url = string.Format(buildStatusUrl, build.Id);
-				var buildStatusJsonString = RequestHelper.GetJson(url);
-				buildStatusJson = JsonConvert.DeserializeObject<dynamic>(buildStatusJsonString ?? string.Empty);
+                    var url = string.Format(buildStatusUrl, build.Id);
+                    var buildStatusJsonString = RequestHelper.GetJson(url);
+                    buildStatusJson = JsonConvert.DeserializeObject<dynamic>(buildStatusJsonString ?? string.Empty);
 
-                build.Branch = (buildStatusJson != null) ? (buildStatusJson.branchName ?? "default") : "unknown";
-                build.Status = GetBuildStatusForRunningBuild(build.Id);
+                    url = string.Format(statisticsUrl, build.Id);
+                    var buildStatisticJsonString = RequestHelper.GetJson(url);
+                    buildStatisticJson = JsonConvert.DeserializeObject<dynamic>(buildStatisticJsonString ?? string.Empty);
 
-				if (build.Status == BuildStatus.Running)
-				{
-					UpdateBuildStatusFromRunningBuildJson(build.Id);
-				}
+                    if (buildStatisticJson != null)
+                    {
+                        var buildStatisticJson = GetJsonBuildStatisticsById(job.Id);
+                        build.TotalTest = buildStatisticJson.TotalTestCount;
+                        build.TestPassed = buildStatisticJson.PassedTestCount;
+                    }
 
-				build.UpdatedBy = GetUpdatedBy();
-				build.LastRunText = GetLastRunText();
-				build.IsQueued = IsBuildQueued(build.Id);
+                    build.Branch = (buildStatusJson != null) ? (buildStatusJson.branchName ?? "default") : "unknown";
+                    build.Status = GetBuildStatusForRunningBuild(build.Id);
 
-				if (build.Status == BuildStatus.Running)
-				{
-					var result = GetRunningBuildBranchAndProgress(build.Id);
-					build.Branch = result[0];
-					build.Progress = result[1];
-				}
-				else
-				{
-					build.Progress = string.Empty;
-				}
+                    if (build.Status == BuildStatus.Running)
+                    {
+                        UpdateBuildStatusFromRunningBuildJson(build.Id);
+                    }
 
-				project.Builds.Add(build);
+                    build.UpdatedBy = GetUpdatedBy();
+                    build.LastRunText = GetLastRunText();
+                    build.IsQueued = IsBuildQueued(build.Id);
+
+                    if (build.Status == BuildStatus.Running)
+                    {
+                        var result = GetRunningBuildBranchAndProgress(build.Id);
+                        build.Branch = result[0];
+                        build.Progress = result[1];
+                    }
+                    else
+                    {
+                        build.Progress = string.Empty;
+                    }
+
+                    project.Builds.Add(build);
+                }
 			}
 		}
 
 		private dynamic GetJsonBuildTypeById(string id)
 		{
-			var count = (int)buildTypesJson.count;
-			for (int i = 0; i < count; i++)
-			{
-				if (buildTypesJson.buildType[i].id == id)
-				{
-					return buildTypesJson.buildType[i];
-				}
-			}
+            if (buildTypesJson != null)
+            {
+                var count = (int)buildTypesJson.count;
+                for (int i = 0; i < count; i++)
+                {
+                    if (buildTypesJson.buildType[i].id == id)
+                    {
+                        return buildTypesJson.buildType[i];
+                    }
+                }
+            }
 
 			return null;
 		}
 
-		private bool IsBuildQueued(string buildId)
+        private dynamic GetJsonBuildStatisticsById(string id)
+        {
+            var count = (int)buildStatisticJson.count;
+            for (int i = 0; i < count; i++)
+            {
+                if (buildStatisticJson.buildType[i].id == id)
+                {
+                    return buildStatisticJson.buildType[i];
+                }
+            }
+
+            return null;
+        }
+
+        private bool IsBuildQueued(string buildId)
 		{
 			try
 			{

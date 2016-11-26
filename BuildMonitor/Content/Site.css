@@ -61,12 +61,12 @@ html * {
 }
 .projectTitle {
 	color: #777;
-	margin-top: -12px;
+	margin-top: 2px;
 	display: inline-block;
 }
 
 .buildTitle {
-	font-size: 30px;
+	font-size: 20px;
 	color: #eee;
 	margin-top: -5px;
 }
@@ -84,7 +84,6 @@ html * {
 .buildInfoBranch {
 	font-size: 20px;
 	color: #777;
-	margin-bottom: 2px;
 }
 
 .buildInfoProgressHighlight {
@@ -104,7 +103,7 @@ html * {
 
 .status-None {
 	font-family: kenzo;
-	font-size: 75px;
+	font-size: 50px;
 	color: #BBB;
 	margin-top: -20px;
 	margin-bottom: -5px;
@@ -112,7 +111,7 @@ html * {
 
 .status-Success {
 	font-family: kenzo;
-	font-size: 75px;
+	font-size: 50px;
 	color: #A9E800;
 	margin-top: -20px;
 	margin-bottom: -5px;
@@ -120,7 +119,7 @@ html * {
 
 .status-Failure {
 	font-family: kenzo;
-	font-size: 75px;
+	font-size: 50px;
 	color: #FB1B45;
 	margin-top: -20px;
 	margin-bottom: -5px;
@@ -128,7 +127,7 @@ html * {
 
 .status-Error {
 	font-family: kenzo;
-	font-size: 75px;
+	font-size: 50px;
 	color: #FB1B45;
 	margin-top: -20px;
 	margin-bottom: -5px;
@@ -136,7 +135,7 @@ html * {
 
 .status-Running {
 	font-family: kenzo;
-	font-size: 75px;
+	font-size: 50px;
 	margin-top: -20px;
 	margin-bottom: -5px;
 	-webkit-animation-name: pulsate; /* Chrome, Safari, Opera */

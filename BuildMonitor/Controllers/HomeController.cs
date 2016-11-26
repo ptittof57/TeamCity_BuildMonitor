@@ -13,14 +13,20 @@ namespace BuildMonitor.Controllers
 
 		public HomeController()
 		{
-			modelHandler = new DefaultBuildMonitorModelHandler();
-			//modelHandler = new CustomBuildMonitorModelHandler();
+			//modelHandler = new DefaultBuildMonitorModelHandler();
+			modelHandler = new CustomBuildMonitorModelHandler();
 
 			RequestHelper.Username = ConfigurationManager.AppSettings["teamcity_username"];
 			RequestHelper.Password = ConfigurationManager.AppSettings["teamcity_password"];
 		}
 
-		public ActionResult Index()
+        public ActionResult MyAudio()
+        {
+            var file = Server.MapPath("~/app_data/test.mp3");
+            return File(file, "audio/mp3");
+        }
+
+        public ActionResult Index()
 		{
 			var model = modelHandler.GetModel();
 			return View(model);

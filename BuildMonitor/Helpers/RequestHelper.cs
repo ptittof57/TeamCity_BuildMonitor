@@ -16,9 +16,9 @@ namespace BuildMonitor.Helpers
 				var request = (HttpWebRequest)WebRequest.Create(url);
 				request.Accept = "application/json";
 				request.Headers.Add("ts", DateTime.Now.ToFileTime().ToString());
-				request.Credentials = new NetworkCredential(Username, Password);
+                request.Credentials = new NetworkCredential(Username, Password);
 
-				var response = request.GetResponse().GetResponseStream();
+                var response = request.GetResponse().GetResponseStream();
 				if (response == null)
 				{
 					return null;
@@ -27,8 +27,9 @@ namespace BuildMonitor.Helpers
 				var reader = new StreamReader(response);
 				return reader.ReadToEnd();
 			}
-			catch
+			catch(Exception ex)
 			{
+                Console.WriteLine(ex.Message);
 				return null;
 			}
 		}
